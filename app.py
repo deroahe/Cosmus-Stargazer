@@ -1,6 +1,6 @@
 from flask import Flask, render_template, request, redirect
 from flask_sqlalchemy import SQLAlchemy
-from datetime import datetime
+import datetime
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///posts.db'
@@ -11,22 +11,10 @@ class BlogPost(db.Model):
     title = db.Column(db.String(100), nullable=False)
     content = db.Column(db.Text, nullable=False)
     author = db.Column(db.String(20), nullable=False, default="N/A")
-    date_posted = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    date_posted = db.Column(db.String(100), nullable=False, default=datetime.datetime.now().strftime("%c"))
 
     def __repr__(self):
         return 'Blog post ' + str(self.id)
-
-all_posts = [
-    {
-        'title': 'Post 1',
-        'content': 'Content of post 1',
-        'author': 'cosmus'
-    },
-    {
-        'title': 'Post 2',
-        'content': 'Content of post 2'
-    }
-]
 
 @app.route('/')
 def index():
@@ -37,12 +25,13 @@ def posts():
     if request.method == 'POST':
         post_title = request.form['title']
         post_content = request.form['content']
-        new_post = BlogPost(title=post_title, content=post_content, author='Cosmus')
+        post_author = request.form['author']
+        new_post = BlogPost(title=post_title, content=post_content, author=post_author)
         db.session.add(new_post)
         db.session.commit()
         return redirect('/posts')
     else:
-        all_posts = BlogPost.query.order_by(BlogPost.date_posted.desc()).all()
+        all_posts = BlogPost.query.order_by(BlogPost.id.desc()).all()
         return render_template('posts.html', posts=all_posts)
 
 if __name__ == "__main__":
